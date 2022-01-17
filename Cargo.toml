@@ -19,6 +19,8 @@ filecoin-hashers = { version = "~6.0", default-features = false, features = ["po
 fr32 = { version = "~4.0", default-features = false }
 storage-proofs-core = { version = "~11.0", default-features = false }
 storage-proofs-porep = { version = "~11.0", default-features = false }
+rayon = "1.3.0"
+log = "0.4.8"
 
 [features]
 default = ["opencl"]
