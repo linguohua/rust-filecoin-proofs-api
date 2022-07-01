@@ -20,6 +20,8 @@ filecoin-hashers = { version = "~7.0.0", default-features = false, features = ["
 fr32 = { version = "~5.0.0", default-features = false }
 storage-proofs-core = { version = "~12.0.0", default-features = false }
 storage-proofs-porep = { version = "~12.0.0", default-features = false }
+rayon = "1.3.0"
+log = "0.4.8"
 
 [features]
 default = ["opencl"]
