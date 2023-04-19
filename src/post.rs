@@ -11,6 +11,9 @@ use crate::{
     PrivateReplicaInfo, ProverId, PublicReplicaInfo, RegisteredPoStProof, SectorId, SnarkProof,
 };
 
+use log::{info};
+use std::time::Instant;
+
 /// Given some randomness and the length of available sectors, generates a sector challenge.
 ///
 /// The returned values are indices in the range of `0..sector_set_len`, requiring the caller
@@ -261,6 +264,10 @@ fn generate_winning_post_inner<Tree: 'static + MerkleTreeTrait>(
     replicas: &BTreeMap<SectorId, PrivateReplicaInfo>,
     prover_id: ProverId,
 ) -> Result<Vec<(RegisteredPoStProof, SnarkProof)>> {
+    // let mut replicas_v1 = Vec::new();
+    let time_start = Instant::now();
+    info!("generate_winning_post_inner load p_aux files begin, sectors:{}", replicas.len());
+
     let mut replicas_v1 = Vec::new();
 
     for (id, info) in replicas.iter() {
@@ -283,6 +290,9 @@ fn generate_winning_post_inner<Tree: 'static + MerkleTreeTrait>(
 
         replicas_v1.push((*id, info_v1));
     }
+
+    info!("generate_winning_post_inner load p_aux files end, took:{:#?}, sectors:{}",
+        time_start.elapsed(), replicas.len());
 
     ensure!(!replicas_v1.is_empty(), "missing v1 replicas");
     let posts_v1 = filecoin_proofs_v1::generate_winning_post::<Tree>(
@@ -465,15 +475,17 @@ pub fn generate_window_post(
     )
 }
 
+use rayon::prelude::*;
 fn generate_window_post_inner<Tree: 'static + MerkleTreeTrait>(
     registered_proof_v1: RegisteredPoStProof,
     randomness: &ChallengeSeed,
     replicas: &BTreeMap<SectorId, PrivateReplicaInfo>,
     prover_id: ProverId,
 ) -> Result<Vec<(RegisteredPoStProof, SnarkProof)>> {
+    let time_start = Instant::now();
+    info!("generate_window_post_inner load p_aux files begin, sectors:{}", replicas.len());
     let mut replicas_v1 = BTreeMap::new();
-
-    for (id, info) in replicas.iter() {
+    let replicas_2 = replicas.par_iter().map(|(id, info)|{
         let PrivateReplicaInfo {
             registered_proof,
             comm_r,
@@ -491,8 +503,15 @@ fn generate_window_post_inner<Tree: 'static + MerkleTreeTrait>(
             cache_dir.into(),
         )?;
 
-        replicas_v1.insert(*id, info_v1);
+        Ok((*id, info_v1))
+    }).collect::<Vec<Result<(SectorId, filecoin_proofs_v1::PrivateReplicaInfo<Tree>)>>>();
+
+    for result in replicas_2 {
+        let (id, info_v1) = result?;
+        replicas_v1.insert(id, info_v1);
     }
+
+    info!("generate_window_post_inner load p_aux files end, took:{:#?}, sectors:{}", time_start.elapsed(), replicas.len());
 
     ensure!(!replicas_v1.is_empty(), "missing v1 replicas");
     let posts_v1 = filecoin_proofs_v1::generate_window_post::<Tree>(
