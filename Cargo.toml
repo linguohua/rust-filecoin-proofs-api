@@ -17,6 +17,10 @@ serde = "1.0.104"
 filecoin-proofs-v1 = { package = "filecoin-proofs", version = "~18.1.0", default-features = false }
 fr32 = { version = "~11.1.0", default-features = false }
 storage-proofs-core = { version = "~18.1.0", default-features = false }
+filecoin-hashers = { version = "~13.1.0", default-features = false, features = ["poseidon", "sha256"] }
+storage-proofs-porep = { version = "~18.1.0", default-features = false }
+rayon = "1.3.0"
+log = "0.4.8"
 
 [features]
 default = ["opencl", "cuda"]
